@@ -11,23 +11,27 @@ class Player(pygame.sprite.Sprite):
     
     #elud
     hp = 100
-    sprite_sheet = pygame.image.load("sprites.png")
+    
+    #graafika
     sprite_row = 0
     sprite_column = 0
-    anim_frame_count = 5
+    frame_count = 0
+    
     def __init__(self,x,y): 
         pygame.sprite.Sprite.__init__(self) 
+        
            
-        self.image = self.sprite_sheet
+        self.image = pygame.image.load("sprites.gif")
         self.rect = self.image.get_rect() 
         self.rect.x = x
         self.rect.y = y
-   
+    
+    #joonistame õige raami spritesheetist
     def draw(self, target_surface):
-        patch_rect = (self.sprite_column * 50, self.sprite_row*50, 50, self.image.get_height())
+        patch_rect = (self.sprite_column * 50+273, self.sprite_row*50, 50, 85)
         target_surface.blit(self.image, (self.rect.x, self.rect.y), patch_rect)
 
-    # Leiame kus tegelane parajasti on
+    # uuendame tegelase asukohta
     def update(self): 
  
         # horisontaalne liikumine
@@ -46,9 +50,20 @@ class Player(pygame.sprite.Sprite):
         # vertikaalne liikumine
         self.rect.y += self.ychange
         
-        if self.anim_frame_count > 0:
-           self.anim_frame_count = (self.anim_frame_count + 1 ) % 60
-           self.sprite_column = self.anim_frame_count // 6
+        
+        # ajutine kood, kasutan 3 raami mingist suvalisest spritesheetist mis ma leidsin et anda tegelasele animatsioon
+        if self.frame_count == 29:
+            self.frame_count = 0
+        else:
+            self.frame_count += 1
+        
+        if self.frame_count <= 9:
+            self.sprite_column = 0
+        elif self.frame_count <= 19:
+            self.sprite_column = 1
+        else:
+            self.sprite_column = 2
+        
          
     # gravitatsioon hüppamise jaoks
     def gravity(self):
