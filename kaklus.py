@@ -15,73 +15,125 @@ class Player(pygame.sprite.Sprite):
     #graafika
     sprite_row = 0
     sprite_column = 0
-    frame_count = 0
     scale = 3
+    moveleft = False
+    moveright = False
+    jumping = False
     direction = "left"
-    
+    spritewidth = 60
+    spriteheight = 100
+    sheetedge = 7
+    scaledwidth = spritewidth * scale
+    scaledheight = spriteheight * scale
+    scalededge = sheetedge * scale
+    animframes = 4
+    frame_count = 0
     def __init__(self,x,y,spritesheet): 
         pygame.sprite.Sprite.__init__(self) 
         
            
-        self.image = pygame.transform.scale(pygame.image.load(spritesheet), (548*self.scale,1081*self.scale))
-        self.rect = self.image.get_rect() 
+        self.right = pygame.transform.scale(pygame.image.load(spritesheet), (548*self.scale,1081*self.scale))
+        self.left = pygame.transform.flip(self.right, True, False)
+        self.rect = pygame.Rect(x, y, self.scaledwidth, self.scaledheight)
         self.rect.x = x
         self.rect.y = y
     
     #joonistame õige raami spritesheetist
     def draw(self, target_surface):
-        patch_rect = (self.sprite_column * 45*self.scale + 7*self.scale, self.sprite_row*92*self.scale, 50*self.scale, 92*self.scale)
-        target_surface.blit(self.image, (self.rect.x, self.rect.y), patch_rect)
-
+        self.update()
+        if self.direction == "right":
+            patch_rect = (self.sprite_column * self.scaledwidth + self.scalededge, self.sprite_row, self.scaledwidth, self.scaledheight)
+            target_surface.blit(self.right, (self.rect.x, self.rect.y), patch_rect)
+        else:
+            patch_rect = (548*self.scale-self.scaledwidth-(self.sprite_column * self.scaledwidth + self.scalededge), self.sprite_row, self.scaledwidth, self.scaledheight)
+            target_surface.blit(self.left, (self.rect.x, self.rect.y), patch_rect)            
 
 
     # uuendame tegelase asukohta
     def update(self): 
  
-        # horisontaalne liikumine
-        self.rect.x += self.xchange
+        self.scaledwidth = self.spritewidth * self.scale
+        self.scaledheight = self.spriteheight * self.scale
+        self.scalededge = self.sheetedge * self.scale
          
         # akna äärtest ei saa välja minna
-        if self.rect.x <= 0 and self.xchange != 0:
-            self.xchange = 0
+        if self.rect.x <= 0:
             self.rect.x = 0
 
-        if self.rect.x >= 1000-50*self.scale and self.xchange != 0:
-            self.xchange = 0
-            self.rect.x = 1000-50*self.scale
+        if self.rect.x >= 1000-self.scaledwidth:
+            self.rect.x = 1000-self.scaledwidth
+    
 
- 
+        if self.moveleft:
+            self.direction = "left"
+            self.rect.x -= 5
+            if self.rect.y == 319 or self.rect.y == 274:
+                self.sprite_column = 0
+                self.sprite_row = 280
+                self.spriteheight = 77
+                self.spritewidth = 68
+                self.animframes = 6
+                if self.rect.y == 550-92*3:
+                    self.rect.y = 550-self.scaledheight
+        elif self.moveright:
+            self.direction = "right"
+            self.rect.x += 5
+            if self.rect.y == 319 or self.rect.y == 274:
+                self.sprite_column = 0
+                self.sprite_row = 280
+                self.spriteheight = 77
+                self.spritewidth = 68
+                self.animframes = 6
+                if self.rect.y == 550-92*3:
+                    self.rect.y = 550-self.scaledheight
+
+        else:
+            self.sprite_column = 0
+            self.spritewidth = 45
+            self.spriteheight = 92
+            self.sprite_row = 0
+            self.sheetedge = 7
+            self.animframes = 4
+           
+        if self.jumping:
+            self.sprite_row = 172*3
+            self.spriteheight = 92
+            self.spritewidth = 48
+            self.sprite_column = 6
+            if self.rect.y >= 250 and self.ychange > 0:
+                self.jumping = False
+            
         # vertikaalne liikumine
         self.rect.y += self.ychange
         
+
         
-        # ajutine kood, kasutan 3 raami mingist suvalisest spritesheetist mis ma leidsin et anda tegelasele animatsioon
-        if self.frame_count == 29:
+        
+        #animatsiooni kood
+        if self.frame_count >= self.animframes*10-1:
             self.frame_count = 0
         else:
             self.frame_count += 1
+        if not self.jumping:
+            self.sprite_column = self.frame_count//10
+
         
-        if self.frame_count <= 9:
-            self.sprite_column = 0
-        elif self.frame_count <= 19:
-            self.sprite_column = 1
-        else:
-            self.sprite_column = 2
-        
-         
+    
+        self.gravity()     
     # gravitatsioon hüppamise jaoks
     def gravity(self):
         self.ychange += .55
         # kontroll kas tegelane on maa peal või õhus
-        if self.rect.y >= 300 and self.ychange >= 0:
+        if self.rect.y >= 550-self.scaledheight and self.ychange >= 0:
             self.ychange = 0
-            self.rect.y = 300
+            self.rect.y = 550-self.scaledheight
             self.jumps = 2
  
     # hüppamine (tegin double jumpiga et oleks huvitavam)
     def jump(self):
         if self.jumps >= 1:
             self.ychange = -10
+            self.jumping = True
             self.jumps -= 1
     
     def dist(self, other):
@@ -139,9 +191,11 @@ while not done:
  
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_LEFT:
-                player1.xchange -= 5
+                player1.moveleft = True
+                player1.moveright = False
             if event.key == pygame.K_RIGHT:
-                player1.xchange += 5
+                player1.moveright = True
+                player1.moveleft = False
             if event.key == pygame.K_UP:
                 player1.jump()
             if event.key == pygame.K_l:
@@ -149,30 +203,29 @@ while not done:
                  
         if event.type == pygame.KEYUP: 
             if event.key == pygame.K_LEFT: 
-                player1.xchange += 5
+                player1.moveleft = False
             if event.key == pygame.K_RIGHT: 
-                player1.xchange -= 5
+                player1.moveright = False
                 
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_a:
-                player2.xchange -= 5
+                player2.moveleft = True
+                player2.moveright = False
             if event.key == pygame.K_d:
-                player2.xchange += 5
+                player2.moveright = True
+                player2.moveleft = False
             if event.key == pygame.K_w:
                 player2.jump()
                  
         if event.type == pygame.KEYUP: 
             if event.key == pygame.K_a: 
-                player2.xchange += 5
+                player2.moveleft = False
             if event.key == pygame.K_d: 
-                player2.xchange -= 5
+                player2.moveright = False
                 
  
 
-    player1.gravity()
-    player1.update() 
-    player2.gravity()
-    player2.update()
+
     
     if frame == 48:
         frame = 0
@@ -197,14 +250,11 @@ while not done:
         background = frame7
 
 
-    screen.fill([0,0,0])
-   
-
     screen.blit(background, (0,0))
     for sprite in all_sprites:
         sprite.draw(screen)
 
     pygame.display.flip() 
-    clock.tick(60) 
+    clock.tick(120) 
 
 pygame.quit ()
