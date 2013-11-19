@@ -11,19 +11,22 @@ class Player(pygame.sprite.Sprite):
     
     #elud
     hp = 100
- 
-    def __init__(self, x, y): 
+    sprite_sheet = pygame.image.load("sprites.png")
+    sprite_row = 0
+    sprite_column = 0
+    anim_frame_count = 5
+    def __init__(self,x,y): 
         pygame.sprite.Sprite.__init__(self) 
            
-        # tegelase kujutise loomine
-        self.image = pygame.Surface([15, 15]) 
-        self.image.fill([255,255,255])
-   
-        # asukoha määramine
+        self.image = self.sprite_sheet
         self.rect = self.image.get_rect() 
         self.rect.x = x
         self.rect.y = y
-       
+   
+    def draw(self, target_surface):
+        patch_rect = (self.sprite_column * 50, self.sprite_row*50, 50, self.image.get_height())
+        target_surface.blit(self.image, (self.rect.x, self.rect.y), patch_rect)
+
     # Leiame kus tegelane parajasti on
     def update(self): 
  
@@ -34,13 +37,18 @@ class Player(pygame.sprite.Sprite):
         if self.rect.x <= 0 and self.xchange != 0:
             self.xchange = 0
             self.rect.x = 0
+
         if self.rect.x >= 785 and self.xchange != 0:
             self.xchange = 0
             self.rect.x = 785
+
  
         # vertikaalne liikumine
         self.rect.y += self.ychange
         
+        if self.anim_frame_count > 0:
+           self.anim_frame_count = (self.anim_frame_count + 1 ) % 60
+           self.sprite_column = self.anim_frame_count // 6
          
     # gravitatsioon hüppamise jaoks
     def gravity(self):
@@ -57,11 +65,19 @@ class Player(pygame.sprite.Sprite):
             self.ychange = -10
             self.jumps -= 1
     
+    def dist(self, other):
+        return abs(self.rect.x-other.rect.x)
+    
     # kaks erinevat lööki, kiire ja lühikese ulatusega ning aeglane ja pika ulatusega        
-    def fast(self):
-        0
-    def slow(self):
-        0
+    def fast(self, other):
+        if self.dist(other) <= 100:
+            other.hp -= 10
+        print(other.hp)
+        self.anim_frame_count = 5
+    def slow(self, other):
+        if self.dist(other) <= 150:
+            other.hp -= 20
+        print(other.hp)
  
 pygame.init() 
 window=[800,600] 
@@ -70,18 +86,20 @@ pygame.display.set_caption("Kaklus")
 all_sprites = pygame.sprite.Group()
    
 # loon 2 tegelast kasutades Player klassi ning määran nende asukohad
-player1 = Player(20, 15)
+player1 = Player(100,100)
 player1.rect.x = 500
 player1.rect.y = 485
 all_sprites.add(player1)
 
-player2 = Player(20, 15)
+player2 = Player(100,100)
 player2.rect.x = 100
 player2.rect.y = 485
 all_sprites.add(player2)
 
 done = False
 clock = pygame.time.Clock() 
+
+
 
 
 # main loop
@@ -98,6 +116,8 @@ while not done:
                 player1.xchange += 5
             if event.key == pygame.K_UP:
                 player1.jump()
+            if event.key == pygame.K_l:
+                player1.fast(player2)
                  
         if event.type == pygame.KEYUP: 
             if event.key == pygame.K_LEFT: 
@@ -118,6 +138,7 @@ while not done:
                 player2.xchange += 5
             if event.key == pygame.K_d: 
                 player2.xchange -= 5
+                
  
 
     player1.gravity()
@@ -127,7 +148,10 @@ while not done:
       
     screen.fill([0,0,0])
    
-    all_sprites.draw(screen)
+
+   
+    for sprite in all_sprites:
+        sprite.draw(screen)
 
     pygame.display.flip() 
     clock.tick(60) 
