@@ -1,4 +1,5 @@
 import pygame
+from pprint import pprint
 
 class Player(pygame.sprite.Sprite): 
    
@@ -88,6 +89,7 @@ class Player(pygame.sprite.Sprite):
                     self.rect.y = 550-self.scaledheight
 
         else:
+
             self.sprite_column = 0
             self.spritewidth = 45
             self.spriteheight = 92
@@ -96,6 +98,7 @@ class Player(pygame.sprite.Sprite):
             self.animframes = 4
            
         if self.jumping:
+            self.animframes = 0
             self.sprite_row = 172*3
             self.spriteheight = 92
             self.spritewidth = 48
@@ -251,6 +254,7 @@ while not done:
 
 
     screen.blit(background, (0,0))
+    pprint(vars(player1))
     for sprite in all_sprites:
         sprite.draw(screen)
 
